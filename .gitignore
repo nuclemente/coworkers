@@ -1,0 +1,21 @@
+# Dados sensíveis — nunca versionar
+/data/
+
+# Diretório de scratch
+temp/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+MEMORY.md
+config/*
+SPEC.md
