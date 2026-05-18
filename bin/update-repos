@@ -1,0 +1,41 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+SCRIPT_DIR="${0:A:h}"
+ROOT_DIR="${SCRIPT_DIR:h}"
+YAML_FILE="${ROOT_DIR}/settings/team-repos.yaml"
+BACKUP_FILE="${YAML_FILE}.bak"
+
+if [[ ! -f "$YAML_FILE" ]]; then
+  print -u2 "error: $YAML_FILE not found"
+  exit 1
+fi
+
+print "→ Fetching repos from nu dev squad-services pj-financial-management..."
+repos=("${(@f)$(nu dev squad-services pj-financial-management)}")
+
+repos=("${(@)repos:#}")
+
+if (( ${#repos} == 0 )); then
+  print -u2 "error: no repos returned by nu command"
+  exit 1
+fi
+
+sorted_repos=("${(@on)repos}")
+
+print "→ Backing up current YAML to ${BACKUP_FILE}"
+cp "$YAML_FILE" "$BACKUP_FILE"
+
+header=$(awk '/^team-repos:/{exit} {print}' "$YAML_FILE")
+
+{
+  print -r -- "$header"
+  print "team-repos:"
+  for repo in "${sorted_repos[@]}"; do
+    print "  - ${repo}"
+  done
+} > "${YAML_FILE}.tmp"
+
+mv "${YAML_FILE}.tmp" "$YAML_FILE"
+
+print "✓ Updated ${YAML_FILE} with ${#sorted_repos} repos"

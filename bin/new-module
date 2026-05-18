@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+MODULES_DIR="$ROOT/modules"
+TEMPLATE="$MODULES_DIR/_template.md"
+
+usage() {
+  cat <<USAGE >&2
+uso: bin/new-module <nome-do-modulo> [NN]
+
+  <nome-do-modulo>   slug em kebab-case, ex.: um-a-um, performance-cycle
+  NN                 (opcional) número do módulo com 2 dígitos.
+                     Se omitido, usa o próximo disponível em modules/.
+
+Cria modules/NN-<nome-do-modulo>.md a partir de _template.md, pronto para
+preencher Objetivo / Campos / Funcionalidades e rodar /enrich-module-spec.
+USAGE
+  exit 1
+}
+
+[[ $# -ge 1 && $# -le 2 ]] || usage
+
+SLUG="$1"
+if [[ ! "$SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+  echo "erro: nome deve ser kebab-case (ex.: um-a-um). recebido: $SLUG" >&2
+  exit 1
+fi
+
+if [[ ! -f "$TEMPLATE" ]]; then
+  echo "erro: template não encontrado em $TEMPLATE" >&2
+  exit 1
+fi
+
+if [[ $# -eq 2 ]]; then
+  NN="$2"
+  [[ "$NN" =~ ^[0-9]{2}$ ]] || { echo "erro: NN deve ter 2 dígitos (ex.: 02)" >&2; exit 1; }
+else
+  last=$(ls "$MODULES_DIR" 2>/dev/null \
+    | grep -E '^[0-9]{2}-.*\.md$' \
+    | sed -E 's/^([0-9]{2}).*/\1/' \
+    | sort -n \
+    | tail -1 || true)
+  next=$(( 10#${last:-0} + 1 ))
+  NN=$(printf '%02d' "$next")
+fi
+
+DEST="$MODULES_DIR/$NN-$SLUG.md"
+if [[ -e "$DEST" ]]; then
+  echo "erro: $DEST já existe" >&2
+  exit 1
+fi
+
+TITLE=$(echo "$SLUG" | tr '-' ' ' | awk '{ for (i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2) } 1')
+
+cp "$TEMPLATE" "$DEST"
+# substitui o título "# Nome do módulo" pelo título derivado do slug
+sed -i.bak "1s|^# .*|# $TITLE|" "$DEST" && rm "$DEST.bak"
+
+echo "criado: modules/$NN-$SLUG.md"
+echo "próximo passo: preencher Objetivo / Campos / Funcionalidades e rodar /enrich-module-spec"
