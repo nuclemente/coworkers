@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# bin/web-up — sobe o Cowork Dashboard local.
+#
+# Responsabilidades:
+#   1. Verifica node e npm disponíveis.
+#   2. Roda a migração da skill `todo` (idempotente).
+#   3. Roda `npm install` se node_modules/ não existir em web/cowork/.
+#   4. `npm run dev` em web/cowork/ (default: http://localhost:3000).
+#
+# Fail-fast em qualquer falha. pt-BR.
+
+set -euo pipefail
+
+# Resolve a raiz do repo (este script vive em bin/).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+WEB_DIR="${REPO_ROOT}/web/cowork"
+MIGRATE="${REPO_ROOT}/.claude/skills/todo/scripts/migrate.py"
+
+err() { printf 'ERRO: %s\n' "$*" >&2; }
+info() { printf '==> %s\n' "$*"; }
+
+# 1. Dependências de host
+if ! command -v node >/dev/null 2>&1; then
+  err "node não encontrado no PATH. Instale Node 20+."
+  exit 1
+fi
+if ! command -v npm >/dev/null 2>&1; then
+  err "npm não encontrado no PATH."
+  exit 1
+fi
+if ! command -v python3 >/dev/null 2>&1; then
+  err "python3 não encontrado no PATH."
+  exit 1
+fi
+
+NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+if [ "${NODE_MAJOR}" -lt 20 ]; then
+  err "Node 20+ exigido (encontrado ${NODE_MAJOR})."
+  exit 1
+fi
+
+# 2. Diretórios esperados
+if [ ! -d "${WEB_DIR}" ]; then
+  err "Diretório ${WEB_DIR} não existe."
+  exit 1
+fi
+if [ ! -f "${MIGRATE}" ]; then
+  err "Script de migração ausente: ${MIGRATE}"
+  exit 1
+fi
+
+# 3. Migração SQLite (idempotente)
+info "Aplicando migração SQLite (idempotente)..."
+python3 "${MIGRATE}"
+
+# 4. Instalar deps se necessário
+if [ ! -d "${WEB_DIR}/node_modules" ]; then
+  info "node_modules/ ausente em web/cowork/. Rodando npm install (pode demorar)..."
+  (cd "${WEB_DIR}" && npm install)
+else
+  info "node_modules/ presente — pulando npm install."
+fi
+
+# 5. Subir dev server
+info "Iniciando Next dev em ${WEB_DIR}..."
+cd "${WEB_DIR}"
+exec npm run dev

@@ -1,0 +1,12 @@
+# dependências
+node_modules/
+
+# builds Next
+.next/
+out/
+
+# locais
+.env*.local
+
+# OS
+.DS_Store

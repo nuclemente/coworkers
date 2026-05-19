@@ -20,3 +20,8 @@ MEMORY.md
 config/*
 SPEC.md
 features/*.md
+
+# Cowork Dashboard (defesa em profundidade — também ignorado por web/cowork/.gitignore)
+web/cowork/node_modules/
+web/cowork/.next/
+web/cowork/out/
