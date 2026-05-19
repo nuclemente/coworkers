@@ -19,3 +19,4 @@ venv/
 MEMORY.md
 config/*
 SPEC.md
+features/*.md

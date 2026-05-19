@@ -33,7 +33,7 @@ Artefatos, respostas e documentação: **pt-BR**.
 | Tipo | Local |
 |------|-------|
 | Skills | `.claude/skills/<skill>/SKILL.md` |
-| Agents | `.claude/agents/<agent>/AGENT.md` |
+| Agents | `.claude/agents/<agent>.md` (arquivo flat) |
 | Scripts Python | `.claude/skills/<skill>/scripts/` (dentro da Skill que invoca) |
 | Configurações fixas | `MEMORY.md` |
 | Listas estruturadas | `/config/*.yaml` |
@@ -43,13 +43,15 @@ Artefatos, respostas e documentação: **pt-BR**.
 
 ## Processo de construção de features
 
-Conduzido por meta-Skills (ver seção 9 do `SPEC.md`):
+Conduzido por **um agent orquestrador + 5 skills-fase** (ver seção 9 do `SPEC.md`):
 
-1. `feature-bootstrap` — doc base em modo **brainstorm interativo** (a feature só é dada como pronta quando o usuário declarar explicitamente)
-2. `feature-refine` — fechar gaps
-3. `feature-plan` — plano de implementação
-4. `feature-implement` — criar a Skill/agent + migrações SQLite + entradas em `MEMORY.md` / `/config/`
-5. `feature-archive` — descartar `/features/<feature>.md` e atualizar índice
+- **Entry point recomendado:** agent `feature-builder` em `.claude/agents/feature-builder.md` — conduz a feature do brainstorm ao encerramento numa única invocação.
+- **Cada skill-fase também é invocável isoladamente** (útil para pular fases ou regerar apenas uma parte):
+  - `.claude/skills/feature-bootstrap/` — doc base em **brainstorm interativo**; a feature só é dada como pronta quando o usuário declarar explicitamente.
+  - `.claude/skills/feature-refine/` — fechar gaps.
+  - `.claude/skills/feature-plan/` — plano de implementação.
+  - `.claude/skills/feature-implement/` — criar a Skill/agent + migrações SQLite + entradas em `MEMORY.md` / `/config/`.
+  - `.claude/skills/feature-archive/` — descartar `/features/<feature>.md` e atualizar índice em `SPEC.md`.
 
 A ordem de implementação das features é **escolha do usuário** caso a caso.
 
